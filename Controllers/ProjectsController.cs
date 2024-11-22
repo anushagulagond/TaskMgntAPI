@@ -73,10 +73,10 @@ namespace TaskMgntAPI.Controllers
                 {
                     return NotFound();
                 }
-                else
-                {
-                    throw;
-                }
+                //else
+                //{
+                //    throw;
+                //}
             }
 
             return NoContent();

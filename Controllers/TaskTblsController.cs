@@ -13,10 +13,10 @@ namespace TaskMgntAPI.Controllers
     {
         private readonly TaskMgntDbContext _context;
         private readonly IEmailService _emailService;
-        public TaskTblsController(TaskMgntDbContext context, IEmailService _emailService)
+        public TaskTblsController(TaskMgntDbContext context, IEmailService emailService)
         {
             _context = context;
-            _emailService = _emailService;
+            _emailService = emailService;
         }
 
         // GET: api/TaskTbls
@@ -143,31 +143,6 @@ namespace TaskMgntAPI.Controllers
 
 
 
-        [HttpPatch("{id}")]
-        public async Task<IActionResult> UpdateTaskStatus(int id, [FromBody] TaskStatusUpdateDTO request)
-        {
-            if (string.IsNullOrEmpty(request?.Status))
-            {
-                return BadRequest("Status is required.");
-            }
-
-            var task = await _context.TaskTbls.FindAsync(id);
-            if (task == null)
-            {
-                return NotFound("Task not found.");
-            }
-
-            task.Status = request.Status;
-            task.Priority = request.Priority; // Update priority
-            task.TaskEndDate = (DateTime)request.TaskEndDate; // Update due date
-
-            await _context.SaveChangesAsync();
-
-            return NoContent(); // 204 No Content response if successful
-        }
-
-
-
         //[HttpPatch("{id}")]
         //public async Task<IActionResult> UpdateTaskStatus(int id, [FromBody] TaskStatusUpdateDTO request)
         //{
@@ -182,45 +157,70 @@ namespace TaskMgntAPI.Controllers
         //        return NotFound("Task not found.");
         //    }
 
-        //    // Update task details
         //    task.Status = request.Status;
-        //    task.Priority = request.Priority;
-        //    task.TaskEndDate = request.TaskEndDate;
+        //    task.Priority = request.Priority; // Update priority
+        //    task.TaskEndDate = (DateTime)request.TaskEndDate; // Update due date
 
         //    await _context.SaveChangesAsync();
 
-        //    // Fetch user email by userId
-        //    string userEmail;
-        //    try
-        //    {
-        //        userEmail = await _emailService.GetUserEmailByIdAsync(task.AssignedToUserId);
-        //    }
-        //    catch (InvalidOperationException ex)
-        //    {
-        //        return NotFound(ex.Message);
-        //    }
-
-        //    var adminEmail = "samalaabhinaya@example.com"; // Replace with admin email
-        //    var subject = $"Task '{task.TaskName}' Status Updated";
-        //    var body = $"Dear Admin,\n\nThe following task has been updated by the user ({userEmail}):\n\n" +
-        //               $"- Task Name: {task.TaskName}\n" +
-        //               $"- Status: {task.Status}\n" +
-        //               $"- Priority: {task.Priority}\n" +
-        //               $"- End Date: {task.TaskEndDate:yyyy-MM-dd}\n\n" +
-        //               "Best regards,\nTask Management System";
-
-        //    try
-        //    {
-        //        await _emailService.SendEmailAsync(adminEmail, subject, body, userEmail);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine($"Failed to send email: {ex.Message}");
-        //        return StatusCode(500, "Task updated, but failed to send email to the admin.");
-        //    }
-
-        //    return NoContent(); // Task updated and email sent successfully
+        //    return NoContent(); // 204 No Content response if successful
         //}
+
+
+
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> UpdateTaskStatus(int id, [FromBody] TaskStatusUpdateDTO request)
+        {
+            if (string.IsNullOrEmpty(request?.Status))
+            {
+                return BadRequest("Status is required.");
+            }
+
+            var task = await _context.TaskTbls.FindAsync(id);
+            if (task == null)
+            {
+                return NotFound("Task not found.");
+            }
+
+            // Update task details
+            task.Status = request.Status;
+            task.Priority = request.Priority;
+            task.TaskEndDate = request.TaskEndDate;
+
+            await _context.SaveChangesAsync();
+
+            // Fetch user email by userId
+            string userEmail;
+            try
+            {
+                userEmail = await _emailService.GetUserEmailByIdAsync(task.AssignedToUserId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+
+            var adminEmail = "samalaabhinaya@example.com"; // Replace with admin email
+            var subject = $"Task '{task.TaskName}' Status Updated";
+            var body = $"Dear Admin,\n\nThe following task has been updated by the user ({userEmail}):\n\n" +
+                       $"- Task Name: {task.TaskName}\n" +
+                       $"- Status: {task.Status}\n" +
+                       $"- Priority: {task.Priority}\n" +
+                       $"- End Date: {task.TaskEndDate:yyyy-MM-dd}\n\n" +
+                       "Best regards,\nTask Management System";
+
+            try
+            {
+                await _emailService.SendEmailAsync(adminEmail, subject, body, userEmail);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to send email: {ex.Message}");
+                return StatusCode(500, "Task updated, but failed to send email to the admin.");
+            }
+
+            return NoContent(); // Task updated and email sent successfully
+        }
 
 
 
